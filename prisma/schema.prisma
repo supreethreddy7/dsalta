@@ -1,0 +1,100 @@
+// DSALTA-style Compliance Task & Evidence schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id         String      @id @default(uuid())
+  name       String
+  frameworks Framework[]
+  tasks      Task[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Framework {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  controls       Control[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Control {
+  id         String    @id @default(uuid())
+  frameworkId String
+  code       String
+  title      String
+  framework  Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  tasks      Task[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([frameworkId, code])
+  @@index([frameworkId])
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  COMPLETE
+}
+
+enum TaskCategory {
+  ACCESS_CONTROL
+  POLICY
+  RISK_ASSESSMENT
+  VENDOR_SECURITY
+  OTHER
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  organizationId String
+  controlId      String
+  name           String
+  description    String?
+  category       TaskCategory
+  status         TaskStatus   @default(OPEN)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  control        Control      @relation(fields: [controlId], references: [id])
+  evidence       Evidence[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@index([organizationId, controlId])
+}
+
+enum EvidenceType {
+  SCREENSHOT
+  DOCUMENT
+  LINK
+  LOG_EXPORT
+  OTHER
+}
+
+model Evidence {
+  id        String       @id @default(uuid())
+  taskId    String
+  type      EvidenceType
+  note      String?
+  task      Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@index([taskId])
+}
