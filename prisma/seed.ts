@@ -59,7 +59,7 @@ async function main() {
     });
   }
 
-  console.log('Seed complete ✅');
+  console.log('Seed complete');
   console.log({
     organizationId: org.id,
     frameworkId: framework.id,
